@@ -30,6 +30,7 @@ function handleLogin(StudentModel $studentModel): array
             $_SESSION['nric']       = $student['nric'];
             $_SESSION['name']       = $student['name'];
             $_SESSION['program']    = $student['program'];
+            $_SESSION['profile_picture'] = $student['profile_picture'] ?? null;
 
             header("Location: profile.php");
             exit();
@@ -45,10 +46,57 @@ function handleLogin(StudentModel $studentModel): array
  * profile.php - blocks access unless logged in, then reads straight
  * from $_SESSION (never queries another student's row).
  */
-function getProfileData(): array
+function getProfileData(StudentModel $studentModel): array
 {
     requireStudentLogin();
-    return []; // view reads directly from $_SESSION, same as the original
+
+    $error = "";
+    $success = "";
+
+    if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES['profile_picture'])) {
+        $file = $_FILES['profile_picture'];
+
+        $maxSize = 2 * 1024 * 1024;
+        $allowedExt  = ['jpg', 'jpeg', 'png'];
+        $allowedMime = ['image/jpeg', 'image/png'];
+
+        if ($file['error'] === UPLOAD_ERR_NO_FILE) {
+            $error = "Please choose a file to upload.";
+        } elseif ($file['error'] !== UPLOAD_ERR_OK) {
+            $error = "Upload failed. Please try again.";
+        } elseif ($file['size'] > $maxSize) {
+            $error = "File is too large. Maximum size is 2MB.";
+        } else {
+            $ext  = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $mime = mime_content_type($file['tmp_name']);
+
+            if (!in_array($ext, $allowedExt, true) || !in_array($mime, $allowedMime, true)) {
+                $error = "Only .jpg, .jpeg and .png files are allowed.";
+            } else {
+                $uploadDir = __DIR__ . '/../uploads/profile/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+
+                $newName = uniqid('pfp_', true) . '.' . $ext;
+
+                if (move_uploaded_file($file['tmp_name'], $uploadDir . $newName)) {
+                    $old = $_SESSION['profile_picture'] ?? null;
+                    if ($old && file_exists($uploadDir . $old)) {
+                        unlink($uploadDir . $old);
+                    }
+
+                    $studentModel->updateProfilePicture((int) $_SESSION['student_id'], $newName);
+                    $_SESSION['profile_picture'] = $newName;
+                    $success = "Profile picture updated.";
+                } else {
+                    $error = "Could not save the uploaded file.";
+                }
+            }
+        }
+    }
+
+    return ['error' => $error, 'success' => $success];
 }
 
 /**

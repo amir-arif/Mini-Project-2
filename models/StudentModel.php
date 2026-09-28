@@ -100,4 +100,12 @@ class StudentModel
         $stmt->close();
         return $ok;
     }
+
+    // For Profile Picture
+    public function updateProfilePicture(int $student_id, string $filename): bool
+    {
+        $stmt = $this->conn->prepare("UPDATE student SET profile_picture = ? WHERE student_id = ?");
+        $stmt->bind_param("si", $filename, $student_id);
+        return $stmt->execute();
+    }
 }

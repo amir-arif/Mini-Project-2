@@ -56,7 +56,7 @@ function getProfileData(StudentModel $studentModel): array
     if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES['profile_picture'])) {
         $file = $_FILES['profile_picture'];
 
-        $maxSize = 2 * 1024 * 1024;
+        $maxSize = 2 * 1024 * 1024; // 2MB
         $allowedExt  = ['jpg', 'jpeg', 'png'];
         $allowedMime = ['image/jpeg', 'image/png'];
 
@@ -81,6 +81,7 @@ function getProfileData(StudentModel $studentModel): array
                 $newName = uniqid('pfp_', true) . '.' . $ext;
 
                 if (move_uploaded_file($file['tmp_name'], $uploadDir . $newName)) {
+
                     $old = $_SESSION['profile_picture'] ?? null;
                     if ($old && file_exists($uploadDir . $old)) {
                         unlink($uploadDir . $old);
@@ -95,6 +96,9 @@ function getProfileData(StudentModel $studentModel): array
             }
         }
     }
+
+    $student = $studentModel->findById((int) $_SESSION['student_id']);
+    $_SESSION['profile_picture'] = $student['profile_picture'] ?? null;
 
     return ['error' => $error, 'success' => $success];
 }

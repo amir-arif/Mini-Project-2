@@ -18,7 +18,7 @@ class StudentModel
     public function findByNric(string $nric): ?array
     {
         $stmt = $this->conn->prepare(
-            "SELECT student_id, nric, password, name, program FROM student WHERE nric = ?"
+            "SELECT student_id, nric, password, name, program, profile_picture FROM student WHERE nric = ?"
         );
         $stmt->bind_param("s", $nric);
         $stmt->execute();
@@ -31,7 +31,7 @@ class StudentModel
     public function findById(int $studentId): ?array
     {
         $stmt = $this->conn->prepare(
-            "SELECT student_id, nric, password, name, program FROM student WHERE student_id = ?"
+            "SELECT student_id, nric, password, name, program, profile_picture FROM student WHERE student_id = ?"
         );
         $stmt->bind_param("i", $studentId);
         $stmt->execute();
